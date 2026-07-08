@@ -360,8 +360,18 @@ export default function ConversationsPage() {
     handleSSEConversationUpdate,
   } = useConversation(selectedId);
 
-  // conecta SSE central e despacha para os hooks
+  // refs sempre com a versão mais atual dos handlers, para a conexão SSE
+  // não precisar ser recriada a cada troca de conversa selecionada
+  const handleSSEMessageRef = useRef(handleSSEMessage);
+  const handleSSEConversationUpdateRef = useRef(handleSSEConversationUpdate);
   useEffect(() => {
+    handleSSEMessageRef.current = handleSSEMessage;
+    handleSSEConversationUpdateRef.current = handleSSEConversationUpdate;
+  }, [handleSSEMessage, handleSSEConversationUpdate]);
+
+  // conecta SSE central e despacha para os hooks — uma única conexão para a vida da página
+  useEffect(() => {
+    const controller = new AbortController();
     let cancelled = false;
 
     async function connectSSE() {
@@ -371,6 +381,7 @@ export default function ConversationsPage() {
       try {
         const response = await fetch('/api/whatsapp/events', {
           headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
         });
 
         if (!response.ok || !response.body) return;
@@ -395,9 +406,9 @@ export default function ConversationsPage() {
               try {
                 const payload = JSON.parse(line.slice(5).trim());
                 if (currentEvent === 'message') {
-                  handleSSEMessage(payload);
+                  handleSSEMessageRef.current(payload);
                 } else if (currentEvent === 'conversation_update') {
-                  handleSSEConversationUpdate(payload);
+                  handleSSEConversationUpdateRef.current(payload);
                 }
               } catch {}
               currentEvent = null;
@@ -410,8 +421,11 @@ export default function ConversationsPage() {
     }
 
     connectSSE();
-    return () => { cancelled = true; };
-  }, [handleSSEMessage, handleSSEConversationUpdate]);
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, []);
 
   async function handleAssume() {
     try {
@@ -444,7 +458,7 @@ export default function ConversationsPage() {
   }
 
   return (
-    <div className="flex h-full -m-6 overflow-hidden">
+    <div className="flex h-full overflow-hidden">
       <ConversationList
         conversations={conversations}
         loading={loading}

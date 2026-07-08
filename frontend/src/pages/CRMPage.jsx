@@ -443,7 +443,7 @@ export default function CRMPage() {
   const totalConvertidos = leads.filter((l) => l.pipeline_stage === 'venda_concluida').length;
 
   return (
-    <div className="flex flex-col h-full -m-6 overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* header */}
       <div className="shrink-0 bg-white border-b border-neutral-200 px-6 py-4">
         <div className="flex items-center justify-between gap-4">
