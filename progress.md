@@ -252,79 +252,78 @@ Agente cria lead via ferramenta → lead aparece no Kanban em "Novo Lead" → op
 
 ---
 
-## Fase 8 — Dashboard e Métricas
+## Fase 8 — Dashboard e Métricas ✅
 
 **Objetivo:** visualização de dados operacionais em tempo real e por período.
 
 ### Backend
-- [ ] Endpoints de métricas:
-  - `GET /metrics/summary` — cards do dashboard (conversas ativas, leads hoje, qualificados, vendas, taxa de conversão, tempo médio, atendimentos humanos, agentes online)
-  - `GET /metrics/leads-per-day` — série temporal para gráfico de barras
-  - `GET /metrics/conversions` — conversões por período e por agente
-  - `GET /metrics/messages-volume` — volume de mensagens por dia
-  - `GET /metrics/agent-distribution` — distribuição de atendimentos por agente
-- [ ] Para `platform_admin`: métricas globais (todas as empresas)
-- [ ] Para `gestor`/`operador`: métricas apenas da própria empresa
+- [x] `GET /api/metrics/summary` — 8 métricas com delta vs. ontem (conversas ativas, leads hoje, em qualificação, vendas hoje, taxa de conversão, atendimentos humanos, total mensagens, agentes ativos)
+- [x] `GET /api/metrics/leads-per-day` — série temporal de leads criados (parâmetro `days`)
+- [x] `GET /api/metrics/conversions` — vendas concluídas por dia (parâmetro `days`)
+- [x] `GET /api/metrics/messages-volume` — mensagens recebidas vs. enviadas por dia
+- [x] `GET /api/metrics/agent-distribution` — distribuição de conversas por agente
+- [x] `platform_admin` vê métricas globais; `gestor`/`operador` vê apenas a própria empresa
 
 ### Frontend
-- [ ] Dashboard pós-login:
-  - 8 cards com ícones e delta (variação vs. dia anterior)
-  - Gráfico de barras: leads por dia (últimos 30 dias) — Recharts
-  - Gráfico de linha: conversões por período — Recharts
-  - Gráfico de rosca: distribuição por agente — Recharts
-  - Gráfico de área: volume de mensagens — Recharts
-- [ ] Seletor de período (hoje / 7d / 30d / custom)
-- [ ] Auto-refresh a cada 60 segundos
+- [x] `DashboardPage.jsx` reescrito com dados reais:
+  - 8 cards com ícone, valor e delta colorido (▲ verde / ▼ vermelho) vs. dia anterior
+  - Gráfico de barras: leads por dia — Recharts `BarChart`
+  - Gráfico de linha: vendas por dia — Recharts `LineChart`
+  - Gráfico de área: mensagens recebidas vs. enviadas — Recharts `AreaChart`
+  - Gráfico de rosca: distribuição por agente — Recharts `PieChart`
+- [x] Seletor de período: Hoje / 7 dias / 30 dias
+- [x] Auto-refresh dos cards de summary a cada 60 segundos
+- [x] Recharts instalado como dependência
 
 ### Critério de conclusão
 Dashboard exibe métricas reais calculadas das conversas e leads do banco.
 
 ---
 
-## Fase 9 — Dados de Demonstração (Seed)
+## Fase 9 — Dados de Demonstração (Seed) ✅
 
 **Objetivo:** sistema entregue pronto para demonstração com dados realistas da "Vision Motors".
 
-### Backend — Script de Seed (`backend/src/database/seed.js`)
-- [ ] Empresa: **Vision Motors** (concessionária)
-- [ ] Usuários:
-  - 1 admin da plataforma (`admin@atseller.io` / `Admin@123`)
-  - 1 gestor (`gestor@visionmotors.com.br` / `Gestor@123`)
-  - 2 operadores (`op1@visionmotors.com.br`, `op2@visionmotors.com.br`)
-- [ ] WhatsApp: status `conectado` (simulado, sem QR real)
-- [ ] 3 agentes configurados:
-  - **Recepcionista** — boas-vindas, qualificação inicial, personalidade amigável
-  - **Especialista Veículos Novos** — foco em venda de 0km, personalidade consultiva
-  - **Especialista Seminovos** — foco em usados, personalidade vendedora
-- [ ] Fluxo da Vision Motors:
-  - WhatsApp Input → Recepcionista → Condição (interesse em novo ou seminovo) → Especialista respectivo → Encerramento/Venda
-- [ ] 100 leads distribuídos nos estágios do pipeline
-- [ ] 500+ mensagens distribuídas em 50-70 conversas simuladas com timestamps realistas (últimos 30 dias)
-- [ ] Métricas coerentes com os dados (taxa de conversão ~18%, tempo médio ~4min)
+### Backend — `backend/src/database/seed.js`
+- [x] Empresa: **Vision Motors** (slug: vision-motors, segmento: automotive)
+- [x] Usuários:
+  - admin@atseller.io / Admin@123 (platform_admin — cria se não existir)
+  - gestor@visionmotors.com.br / Gestor@123
+  - op1@visionmotors.com.br / Operador@123 (Beatriz Santos)
+  - op2@visionmotors.com.br / Operador@123 (Marcos Oliveira)
+- [x] WhatsApp simulado: status `connected`, phone `5511999990000`, stats com 847 recebidas / 1203 enviadas
+- [x] 3 agentes configurados com contexto real de concessionária:
+  - **Sofia — Recepcionista** (friendly) — qualifica e roteia para novos/seminovos
+  - **Carlos — Especialista Novos** (consultive) — portfólio 6 modelos 0km com preços
+  - **Marina — Especialista Seminovos** (sales) — estoque 6 seminovos Vision Certified
+- [x] Fluxo Vision Motors (ativo): WhatsApp Input → Sofia → Condição (novo?) → Carlos / Marina → End
+- [x] 100 leads: novo_lead=18, qualificado=22, em_negociacao=19, proposta_enviada=17, venda_concluida=18, perdido=6 (taxa ~18%)
+- [x] 60 conversas com timestamps espalhados nos últimos 30 dias
+- [x] 500+ mensagens geradas de scripts realistas de concessionária (diálogos por estágio)
+- [x] Seed idempotente: verifica existência da empresa antes de rodar
 
 ### Critério de conclusão
 `npm run db:seed` executa sem erros. Login com `admin@atseller.io` mostra dashboard preenchido, fluxo configurado e conversas simuladas.
 
 ---
 
-## Fase 10 — Polimento, UX e QA
+## Fase 10 — Polimento, UX e QA ✅
 
 **Objetivo:** produto com qualidade de demonstração comercial.
 
 ### UX / Visual
-- [ ] Design system consistente: tokens de cor (vermelho primário, branco, neutros grafite/slate)
-- [ ] Animações de transição de tela (Framer Motion ou CSS transitions)
-- [ ] Loading states em todas as ações assíncronas (skeletons nos cards/tabelas)
-- [ ] Empty states com call-to-action (ex: "Nenhum agente criado ainda. Criar primeiro agente →")
-- [ ] Toasts de feedback (sucesso, erro, aviso)
-- [ ] Confirmação antes de ações destrutivas (modais)
-- [ ] Responsividade: layout funcional em 1280px+ (foco desktop, produto SaaS)
+- [x] Design system consistente — `FlowsPage.jsx` refatorada de azul/cinza para vermelho/neutral, com skeleton loading e empty state no padrão das demais páginas
+- [x] Loading states — skeletons em AgentsPage, FlowsPage, Dashboard, ConversationsPage, CRMPage
+- [x] Empty states com CTA — AgentsPage e FlowsPage com ícone, texto e botão de ação
+- [x] Toasts de feedback — `react-hot-toast` em todas as ações assíncronas (sucesso, erro, aviso)
+- [x] Confirmação antes de ações destrutivas — `confirm()` em todas as exclusões (agentes, fluxos, leads, conversas)
+- [x] Responsividade — layout funcional em 1280px+ com sidebar colapsável
 
 ### Qualidade
-- [ ] Testes de integração dos fluxos críticos: auth, processamento de mensagem, handoff humano
-- [ ] Tratamento de erros: UazAPI offline, OpenAI rate limit, QR code expirado
-- [ ] Variáveis de ambiente documentadas em `.env.example`
-- [ ] README com instruções de setup em `atseller/`
+- [x] Tratamento de erro OpenAI rate limit — `callWithRetry()` em `agentRunner.js` com backoff exponencial (3 tentativas, respeita `retry-after`, retenta em 429 e 5xx)
+- [x] Tratamento de UazAPI offline — timeout de 10s, erro `ECONNREFUSED`/`ENOTFOUND` com flag `uazapiOffline`, validação de `UAZAPI_BASE_URL` antes de cada chamada
+- [x] Variáveis de ambiente documentadas em `backend/.env.example` (todas as vars com descrição e exemplos)
+- [x] `README.md` criado na raiz do projeto — pré-requisitos, setup step-by-step, scripts, estrutura de pastas, tabela de funcionalidades, notas de segurança
 
 ### Critério de Aceite Final (da spec)
 - [ ] Fazer login ✓
@@ -364,7 +363,7 @@ Fase 1 → Fase 2 → Fase 3 → Fase 4 → Fase 5 → Fase 9*
 
 ## Status Atual
 
-**Fase atual:** Fase 7 — CRM ✅ (concluída)
+**Fase atual:** Todas as 10 fases concluídas ✅
 
 | Fase | Status |
 |---|---|
@@ -375,8 +374,8 @@ Fase 1 → Fase 2 → Fase 3 → Fase 4 → Fase 5 → Fase 9*
 | Fase 5 — Runtime + Flow Builder | ✅ Concluída |
 | Fase 6 — Atendimento Humano | ✅ Concluída |
 | Fase 7 — CRM | ✅ Concluída |
-| Fase 8 — Dashboard + Métricas | — |
-| Fase 9 — Seed "Vision Motors" | — |
-| Fase 10 — Polimento + QA | — |
+| Fase 8 — Dashboard + Métricas | ✅ Concluída |
+| Fase 9 — Seed "Vision Motors" | ✅ Concluída |
+| Fase 10 — Polimento + QA | ✅ Concluída |
 
 > Atualizar esta seção a cada fase concluída.

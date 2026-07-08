@@ -7,7 +7,8 @@
     "dev:frontend": "cd frontend && npm run dev",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "db:migrate": "cd backend && npm run db:migrate",
-    "db:seed": "cd backend && npm run db:seed"
+    "db:seed": "cd backend && npm run db:seed",
+    "db:seed-admin": "cd backend && npm run db:seed-admin"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

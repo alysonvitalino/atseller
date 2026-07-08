@@ -5,7 +5,13 @@ const url = require('url');
 const BASE_URL = process.env.UAZAPI_BASE_URL;
 const API_KEY = process.env.UAZAPI_API_KEY;
 
+const REQUEST_TIMEOUT_MS = 10_000;
+
 function request(method, path, body = null) {
+  if (!BASE_URL) {
+    return Promise.reject(new Error('UAZAPI_BASE_URL não configurado.'));
+  }
+
   return new Promise((resolve, reject) => {
     const parsed = url.parse(`${BASE_URL}${path}`);
     const isHttps = parsed.protocol === 'https:';
@@ -16,6 +22,7 @@ function request(method, path, body = null) {
       port: parsed.port || (isHttps ? 443 : 80),
       path: parsed.path,
       method,
+      timeout: REQUEST_TIMEOUT_MS,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': API_KEY,
@@ -39,7 +46,17 @@ function request(method, path, body = null) {
       });
     });
 
-    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy(Object.assign(new Error('UazAPI timeout — servidor não respondeu em 10s'), { code: 'ETIMEDOUT' }));
+    });
+
+    req.on('error', (err) => {
+      if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+        reject(Object.assign(err, { uazapiOffline: true }));
+      } else {
+        reject(err);
+      }
+    });
 
     if (body) req.write(JSON.stringify(body));
     req.end();

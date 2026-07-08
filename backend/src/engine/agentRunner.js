@@ -9,6 +9,28 @@ function getClient() {
   return _openai;
 }
 
+// retry com backoff exponencial para rate limit (429) e erros 5xx da OpenAI
+async function callWithRetry(fn, maxRetries = 3) {
+  let lastErr;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const status = err?.status ?? err?.response?.status;
+      const retryAfter = parseInt(err?.headers?.['retry-after'] ?? '0', 10) || 0;
+      // só retenta em rate limit (429) e erros de servidor (5xx)
+      if (status !== 429 && (status < 500 || status > 599)) throw err;
+      const wait = retryAfter > 0
+        ? retryAfter * 1000
+        : Math.min(1000 * Math.pow(2, attempt), 16000);
+      console.warn(`OpenAI error ${status} — retentando em ${wait}ms (tentativa ${attempt + 1}/${maxRetries})`);
+      await new Promise((r) => setTimeout(r, wait));
+    }
+  }
+  throw lastErr;
+}
+
 const PERSONALITY_PROMPTS = {
   friendly:   'Seu tom é descontraído, caloroso e próximo. Use linguagem informal mas profissional. Seja empático e crie conexão.',
   sales:      'Seja proativo, destaque benefícios e crie urgência com naturalidade. Foque em fechar o negócio sem ser agressivo.',
@@ -75,15 +97,17 @@ async function runAgent(agentConfig, conversation, incomingText) {
   // ferramentas habilitadas para este agente
   const tools = getToolDefinitions(agent.tools || []);
 
-  // chama GPT-4o com function calling
-  const response = await getClient().chat.completions.create({
-    model: 'gpt-4o',
-    messages,
-    tools: tools.length > 0 ? tools : undefined,
-    tool_choice: tools.length > 0 ? 'auto' : undefined,
-    temperature: 0.7,
-    max_tokens: 500,
-  });
+  // chama GPT-4o com function calling (com retry em rate limit)
+  const response = await callWithRetry(() =>
+    getClient().chat.completions.create({
+      model: 'gpt-4o',
+      messages,
+      tools: tools.length > 0 ? tools : undefined,
+      tool_choice: tools.length > 0 ? 'auto' : undefined,
+      temperature: 0.7,
+      max_tokens: 500,
+    })
+  );
 
   const choice = response.choices[0];
   const assistantMessage = choice.message;
@@ -121,12 +145,14 @@ async function runAgent(agentConfig, conversation, incomingText) {
         })),
       ];
 
-      const followUp = await getClient().chat.completions.create({
-        model: 'gpt-4o',
-        messages: followUpMessages,
-        temperature: 0.7,
-        max_tokens: 500,
-      });
+      const followUp = await callWithRetry(() =>
+        getClient().chat.completions.create({
+          model: 'gpt-4o',
+          messages: followUpMessages,
+          temperature: 0.7,
+          max_tokens: 500,
+        })
+      );
 
       const replyText = followUp.choices[0].message.content;
       return { text: replyText, flowAction, toolResults };
@@ -143,21 +169,23 @@ async function evaluateCondition(condition, history) {
     .map((m) => `${m.role === 'user' ? 'Cliente' : 'Agente'}: ${m.content}`)
     .join('\n');
 
-  const response = await getClient().chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content: 'Você avalia condições sobre conversas de vendas. Responda apenas YES ou NO.',
-      },
-      {
-        role: 'user',
-        content: `Baseado na conversa abaixo, a seguinte condição é verdadeira?\n\nCONDIÇÃO: ${condition}\n\nCONVERSA:\n${historyText}\n\nResponda apenas YES ou NO.`,
-      },
-    ],
-    temperature: 0,
-    max_tokens: 5,
-  });
+  const response = await callWithRetry(() =>
+    getClient().chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'Você avalia condições sobre conversas de vendas. Responda apenas YES ou NO.',
+        },
+        {
+          role: 'user',
+          content: `Baseado na conversa abaixo, a seguinte condição é verdadeira?\n\nCONDIÇÃO: ${condition}\n\nCONVERSA:\n${historyText}\n\nResponda apenas YES ou NO.`,
+        },
+      ],
+      temperature: 0,
+      max_tokens: 5,
+    })
+  );
 
   const answer = response.choices[0].message.content.trim().toUpperCase();
   return answer.startsWith('YES');

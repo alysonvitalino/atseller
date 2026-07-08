@@ -12,6 +12,7 @@ const agentsRoutes = require('./routes/agents');
 const flowsRoutes = require('./routes/flows');
 const conversationsRoutes = require('./routes/conversations');
 const leadsRoutes = require('./routes/leads');
+const metricsRoutes = require('./routes/metrics');
 const { startEngine } = require('./engine');
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/api/agents', agentsRoutes);
 app.use('/api/flows', flowsRoutes);
 app.use('/api/conversations', conversationsRoutes);
 app.use('/api/leads', leadsRoutes);
+app.use('/api/metrics', metricsRoutes);
 app.use('/webhooks', webhookRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
