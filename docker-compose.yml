@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: atseller_postgres
+    environment:
+      POSTGRES_USER: atseller
+      POSTGRES_PASSWORD: atseller123
+      POSTGRES_DB: atseller
+    ports:
+      - "5433:5432"
+    volumes:
+      - atseller_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atseller"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  atseller_postgres_data:

@@ -1,0 +1,38 @@
+# Dependências
+node_modules/
+.pnp
+.pnp.js
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# Build do frontend
+frontend/dist/
+frontend/.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Uploads locais (backend)
+backend/uploads/
+
+# Cobertura de testes
+coverage/
+
+# Misc
+*.local
