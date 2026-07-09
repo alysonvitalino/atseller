@@ -15,7 +15,7 @@ export default function NodePropertiesPanel({ node, onChange, onDelete }) {
 
   useEffect(() => {
     if (node?.type === 'ai_agent') {
-      http.get('/agents').then((r) => setAgents(r.data.agents || [])).catch(() => {});
+      http.get('/agents').then((r) => setAgents(r.data.data || [])).catch(() => {});
     }
   }, [node?.type]);
 

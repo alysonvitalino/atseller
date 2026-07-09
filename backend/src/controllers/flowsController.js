@@ -8,7 +8,7 @@ async function listFlows(req, res) {
        FROM flows
        WHERE company_id = $1
        ORDER BY updated_at DESC`,
-      [req.companyId]
+      [req.user.company_id]
     );
     res.json({ flows: rows });
   } catch (err) {
@@ -21,7 +21,7 @@ async function getFlow(req, res) {
   try {
     const { rows } = await pool.query(
       'SELECT * FROM flows WHERE id = $1 AND company_id = $2',
-      [req.params.id, req.companyId]
+      [req.params.id, req.user.company_id]
     );
     if (!rows[0]) return res.status(404).json({ error: 'Fluxo não encontrado.' });
     res.json({ flow: rows[0] });
@@ -39,7 +39,7 @@ async function createFlow(req, res) {
     const { rows } = await pool.query(
       `INSERT INTO flows (company_id, name, description, nodes, edges)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [req.companyId, name, description || null, JSON.stringify(nodes), JSON.stringify(edges)]
+      [req.user.company_id, name, description || null, JSON.stringify(nodes), JSON.stringify(edges)]
     );
     res.status(201).json({ flow: rows[0] });
   } catch (err) {
@@ -54,7 +54,7 @@ async function updateFlow(req, res) {
   try {
     const existing = await pool.query(
       'SELECT id FROM flows WHERE id = $1 AND company_id = $2',
-      [req.params.id, req.companyId]
+      [req.params.id, req.user.company_id]
     );
     if (!existing.rows[0]) return res.status(404).json({ error: 'Fluxo não encontrado.' });
 
@@ -73,7 +73,7 @@ async function updateFlow(req, res) {
         nodes ? JSON.stringify(nodes) : null,
         edges ? JSON.stringify(edges) : null,
         req.params.id,
-        req.companyId,
+        req.user.company_id,
       ]
     );
     res.json({ flow: rows[0] });
@@ -87,7 +87,7 @@ async function toggleActive(req, res) {
   try {
     const existing = await pool.query(
       'SELECT id, is_active FROM flows WHERE id = $1 AND company_id = $2',
-      [req.params.id, req.companyId]
+      [req.params.id, req.user.company_id]
     );
     if (!existing.rows[0]) return res.status(404).json({ error: 'Fluxo não encontrado.' });
 
@@ -97,7 +97,7 @@ async function toggleActive(req, res) {
       // desativa todos os outros antes de ativar este
       await pool.query(
         'UPDATE flows SET is_active = FALSE, updated_at = NOW() WHERE company_id = $1',
-        [req.companyId]
+        [req.user.company_id]
       );
     }
 
@@ -116,7 +116,7 @@ async function deleteFlow(req, res) {
   try {
     const existing = await pool.query(
       'SELECT id FROM flows WHERE id = $1 AND company_id = $2',
-      [req.params.id, req.companyId]
+      [req.params.id, req.user.company_id]
     );
     if (!existing.rows[0]) return res.status(404).json({ error: 'Fluxo não encontrado.' });
 
